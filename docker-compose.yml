@@ -6,13 +6,47 @@ services:
     restart: unless-stopped
     command: python bot.py
     volumes:
-      - ./config.py:/app/config.py:ro
       - ./trades.json:/app/trades.json
     environment:
+      # Python
       - PYTHONUNBUFFERED=1
+      
+      # Flask Secret (for dashboard sessions)
       - FLASK_SECRET_KEY=${FLASK_SECRET_KEY:-dev-secret-change-in-production}
-    env_file:
-      - .env
+      
+      # Exchange Configuration
+      - EXCHANGE_NAME=${EXCHANGE_NAME:-binance}
+      - EXCHANGE_API_KEY=${EXCHANGE_API_KEY:-}
+      - EXCHANGE_API_SECRET=${EXCHANGE_API_SECRET:-}
+      - EXCHANGE_TESTNET=${EXCHANGE_TESTNET:-true}
+      
+      # Trading Configuration
+      - TRADING_SYMBOL=${TRADING_SYMBOL:-BTCUSDT}
+      - TRADING_TIMEFRAME=${TRADING_TIMEFRAME:-1h}
+      - PAPER_TRADING=${PAPER_TRADING:-true}
+      - MAX_POSITION_SIZE=${MAX_POSITION_SIZE:-100}
+      - STOP_LOSS_PERCENT=${STOP_LOSS_PERCENT:-2}
+      - TAKE_PROFIT_PERCENT=${TAKE_PROFIT_PERCENT:-4}
+      - MAX_OPEN_POSITIONS=${MAX_OPEN_POSITIONS:-3}
+      - DAILY_LOSS_LIMIT=${DAILY_LOSS_LIMIT:-1000}
+      
+      # Strategy Configuration
+      - STRATEGY_NAME=${STRATEGY_NAME:-trend_following}
+      - STRATEGY_SHORT_MA=${STRATEGY_SHORT_MA:-20}
+      - STRATEGY_LONG_MA=${STRATEGY_LONG_MA:-50}
+      - STRATEGY_RSI_PERIOD=${STRATEGY_RSI_PERIOD:-14}
+      - STRATEGY_RSI_OVERBOUGHT=${STRATEGY_RSI_OVERBOUGHT:-70}
+      - STRATEGY_RSI_OVERSOLD=${STRATEGY_RSI_OVERSOLD:-30}
+      - STRATEGY_BB_PERIOD=${STRATEGY_BB_PERIOD:-20}
+      - STRATEGY_BB_STD=${STRATEGY_BB_STD:-2}
+      
+      # Discord Notifications
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL:-}
+      - NOTIFY_ON_BUY=${NOTIFY_ON_BUY:-true}
+      - NOTIFY_ON_SELL=${NOTIFY_ON_SELL:-true}
+      - NOTIFY_ON_ERROR=${NOTIFY_ON_ERROR:-true}
+      - DAILY_SUMMARY=${DAILY_SUMMARY:-true}
+      - SUMMARY_TIME=${SUMMARY_TIME:-20:00}
     networks:
       - trading-network
     logging:
@@ -30,13 +64,13 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - ./config.py:/app/config.py:ro
       - ./trades.json:/app/trades.json:ro
     environment:
+      # Python
       - PYTHONUNBUFFERED=1
+      
+      # Flask Secret
       - FLASK_SECRET_KEY=${FLASK_SECRET_KEY:-dev-secret-change-in-production}
-    env_file:
-      - .env
     networks:
       - trading-network
     depends_on:
