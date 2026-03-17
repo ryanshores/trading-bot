@@ -72,11 +72,20 @@ class TradingBot:
         logger.info(f"💰 Paper Trading: ${self.paper_balance:.2f} starting balance")
 
     async def _load_exchange(self) -> ExchangeInterface:
-        """STUB: Load exchange interface"""
-        # TODO: Implement in exchanges/binance_client.py or exchanges/coinbase_client.py
-        from exchanges.binance_client import BinanceClient
+        """Load exchange interface based on config"""
+        if EXCHANGE_CONFIG.name == "binance":
+            from exchanges.binance_client import BinanceClient
 
-        return BinanceClient(EXCHANGE_CONFIG)
+            return BinanceClient(EXCHANGE_CONFIG)
+        elif EXCHANGE_CONFIG.name == "kraken":
+            from exchanges.kraken_client import KrakenClient
+
+            return KrakenClient(EXCHANGE_CONFIG)
+        else:
+            raise ValueError(
+                f"Unknown exchange: {EXCHANGE_CONFIG.name}. "
+                "Supported exchanges: binance, kraken"
+            )
 
     async def _load_strategy(self) -> StrategyInterface:
         """STUB: Load trading strategy"""

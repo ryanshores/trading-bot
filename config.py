@@ -9,10 +9,11 @@ from typing import Optional
 class ExchangeConfig:
     """Exchange API configuration"""
 
-    name: str = "binance"  # or "coinbase", "kraken"
+    name: str = "kraken"  # or "coinbase", "kraken", "binance
     api_key: str = ""  # FILL IN: Your API key
     api_secret: str = ""  # FILL IN: Your API secret
-    testnet: bool = True  # Use testnet for paper trading
+    # testnet: bool = True  # Use testnet for paper trading
+    testnet: bool = False
 
 
 @dataclass
@@ -20,7 +21,7 @@ class TradingConfig:
     """Trading parameters"""
 
     symbol: str = "BTCUSDT"  # Trading pair
-    timeframe: str = "1h"  # Candlestick timeframe (1m, 5m, 15m, 1h, 4h, 1d)
+    timeframe: str = "1m"  # Candlestick timeframe (1m, 5m, 15m, 1h, 4h, 1d)
     paper_trading: bool = True  # True = fake money, False = real trades
 
     # Risk Management - ADJUST THESE

@@ -182,11 +182,36 @@ Trades are logged to `trades.json`. Summary includes:
 2. Create an account
 3. Generate API keys
 4. Set `testnet=True` in config
+5. ```python
+EXCHANGE_CONFIG = ExchangeConfig(
+    name="binance",
+    api_key="your_kraken_api_key",
+    api_secret="your_kraken_api_secret",
+    testnet=False  # Use testnet for paper trading
+)
+```
 
 ### Binance Live (Real Money)
 1. Go to https://www.binance.com/en/my/settings/api-management
 2. Create API key with "Enable Spot & Margin Trading"
 3. Set `testnet=False` in config
+
+### Kraken
+1. Go to https://www.kraken.com/u/security/api
+2. Create a new API key with appropriate permissions
+3. Add to config:
+```python
+EXCHANGE_CONFIG = ExchangeConfig(
+    name="kraken",
+    api_key="your_kraken_api_key",
+    api_secret="your_kraken_api_secret",
+    testnet=False  # Kraken doesn't have a testnet
+)
+```
+
+**Note:** Kraken uses different symbol formats:
+- BTC/USD → `BTCUSD` or `BTCUSDT` (auto-converted internally)
+- ETH/USD → `ETHUSD` or `ETHUSDT` (auto-converted internally)
 
 ## ⚠️ Disclaimer
 
