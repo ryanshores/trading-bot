@@ -1,2 +1,28 @@
+# IDE
 .idea
+.vscode
+*.swp
+*.swo
+
+# Python
 __pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv
+venv/
+ENV/
+
+# Environment variables (contains secrets!)
+.env
+.env.local
+
+# Logs and data
+*.log
+trades.json
+
+# Testing
+.pytest_cache
+.coverage
+htmlcov/

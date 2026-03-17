@@ -1,0 +1,8 @@
+#!/bin/bash
+# Initialize trades.json if it doesn't exist
+if [ ! -f /app/trades.json ]; then
+    touch /app/trades.json
+fi
+
+# Execute the main command
+exec "$@"

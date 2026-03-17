@@ -1,0 +1,52 @@
+services:
+  # Trading Bot Service
+  bot:
+    build: .
+    container_name: trading-bot
+    restart: unless-stopped
+    command: python bot.py
+    volumes:
+      - ./config.py:/app/config.py:ro
+      - ./trades.json:/app/trades.json
+    environment:
+      - PYTHONUNBUFFERED=1
+      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY:-dev-secret-change-in-production}
+    env_file:
+      - .env
+    networks:
+      - trading-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Dashboard Service
+  dashboard:
+    build: .
+    container_name: trading-dashboard
+    restart: unless-stopped
+    command: python dashboard.py
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./config.py:/app/config.py:ro
+      - ./trades.json:/app/trades.json:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY:-dev-secret-change-in-production}
+    env_file:
+      - .env
+    networks:
+      - trading-network
+    depends_on:
+      - bot
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  trading-network:
+    driver: bridge
