@@ -1,6 +1,6 @@
 """
 Trend Following Strategy
-Uses Moving Average Crossover + RSI
+Uses Moving Average Crossover + RSI + MACD
 """
 
 import pandas as pd
@@ -18,10 +18,8 @@ class TrendFollowingStrategy(StrategyInterface):
     Trend Following Strategy
 
     Rules:
-    - BUY: Short MA crosses above Long MA AND RSI < 70
-    - SELL: Short MA crosses below Long MA OR RSI > 70
-
-    TODO: Adjust parameters in config.py
+    - BUY: MA Golden Cross + RSI < overbought + MACD bullish
+    - SELL: MA Death Cross + MACD bearish OR RSI > overbought
     """
 
     def __init__(self, config):
@@ -33,7 +31,7 @@ class TrendFollowingStrategy(StrategyInterface):
         self.rsi_oversold = config.rsi_oversold
 
     def calculate_indicators(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Calculate MA and RSI indicators"""
+        """Calculate MA, RSI, and MACD indicators"""
         df = data.copy()
 
         # Moving Averages
@@ -53,6 +51,7 @@ class TrendFollowingStrategy(StrategyInterface):
         exp2 = df["close"].ewm(span=26).mean()
         df["macd"] = exp1 - exp2
         df["macd_signal"] = df["macd"].ewm(span=9).mean()
+        df["macd_histogram"] = df["macd"] - df["macd_signal"]
 
         return df
 
@@ -66,11 +65,12 @@ class TrendFollowingStrategy(StrategyInterface):
         latest = df.iloc[-1]
         prev = df.iloc[-2]
 
-        # Check for NaN values in indicators
         if (
             pd.isna(latest["ma_short"])
             or pd.isna(latest["ma_long"])
             or pd.isna(latest["rsi"])
+            or pd.isna(latest["macd"])
+            or pd.isna(latest["macd_signal"])
         ):
             return None
         if pd.isna(prev["ma_short"]) or pd.isna(prev["ma_long"]):
@@ -81,38 +81,54 @@ class TrendFollowingStrategy(StrategyInterface):
         prev_short_above_long = prev["ma_short"] > prev["ma_long"]
 
         # Golden Cross (bullish)
+        macd_bullish = latest["macd"] > latest["macd_signal"]
+        macd_bearish = latest["macd"] < latest["macd_signal"]
+        macd_crossover_bullish = macd_bullish and (prev["macd"] <= prev["macd_signal"])
+        macd_crossover_bearish = macd_bearish and (prev["macd"] >= prev["macd_signal"])
+
         if (
             short_above_long
             and not prev_short_above_long
             and latest["rsi"] < self.rsi_overbought
+            and macd_bullish
         ):
+            confidence = max(
+                0.0,
+                min(
+                    1.0,
+                    (self.rsi_overbought - latest["rsi"]) / 40
+                    + (0.2 if macd_crossover_bullish else 0.0),
+                ),
+            )
             return {
                 "action": "buy",
-                "confidence": max(
-                    0.0, min(1.0, (self.rsi_overbought - latest["rsi"]) / 40)
-                ),
-                "reason": f"MA Crossover (Golden Cross) + RSI {latest['rsi']:.1f}",
+                "confidence": confidence,
+                "reason": f"MA Golden Cross + RSI {latest['rsi']:.1f} + MACD bullish",
                 "metadata": {
                     "ma_short": latest["ma_short"],
                     "ma_long": latest["ma_long"],
                     "rsi": latest["rsi"],
+                    "macd": latest["macd"],
+                    "macd_signal": latest["macd_signal"],
+                    "macd_histogram": latest["macd_histogram"],
                 },
             }
 
-        # Death Cross (bearish)
-        if not short_above_long and prev_short_above_long:
+        if not short_above_long and prev_short_above_long and macd_bearish:
             return {
                 "action": "sell",
-                "confidence": 0.8,
-                "reason": f"MA Crossover (Death Cross) + RSI {latest['rsi']:.1f}",
+                "confidence": 0.8 + (0.2 if macd_crossover_bearish else 0.0),
+                "reason": f"MA Death Cross + RSI {latest['rsi']:.1f} + MACD bearish",
                 "metadata": {
                     "ma_short": latest["ma_short"],
                     "ma_long": latest["ma_long"],
                     "rsi": latest["rsi"],
+                    "macd": latest["macd"],
+                    "macd_signal": latest["macd_signal"],
+                    "macd_histogram": latest["macd_histogram"],
                 },
             }
 
-        # RSI Overbought
         if latest["rsi"] > self.rsi_overbought:
             return {
                 "action": "sell",
@@ -120,55 +136,11 @@ class TrendFollowingStrategy(StrategyInterface):
                     0.0, min(1.0, (latest["rsi"] - self.rsi_overbought) / 30)
                 ),
                 "reason": f"RSI Overbought ({latest['rsi']:.1f})",
-                "metadata": {"rsi": latest["rsi"]},
-            }
-
-        return None
-
-        latest = df.iloc[-1]
-        prev = df.iloc[-2]
-
-        # Check for MA crossover
-        short_above_long = latest["ma_short"] > latest["ma_long"]
-        prev_short_above_long = prev["ma_short"] > prev["ma_long"]
-
-        # Golden Cross (bullish)
-        if (
-            short_above_long
-            and not prev_short_above_long
-            and latest["rsi"] < self.rsi_overbought
-        ):
-            return {
-                "action": "buy",
-                "confidence": min(1.0, (self.rsi_overbought - latest["rsi"]) / 40),
-                "reason": f"MA Crossover (Golden Cross) + RSI {latest['rsi']:.1f}",
                 "metadata": {
-                    "ma_short": latest["ma_short"],
-                    "ma_long": latest["ma_long"],
                     "rsi": latest["rsi"],
+                    "macd": latest["macd"],
+                    "macd_signal": latest["macd_signal"],
                 },
-            }
-
-        # Death Cross (bearish)
-        if not short_above_long and prev_short_above_long:
-            return {
-                "action": "sell",
-                "confidence": 0.8,
-                "reason": f"MA Crossover (Death Cross) + RSI {latest['rsi']:.1f}",
-                "metadata": {
-                    "ma_short": latest["ma_short"],
-                    "ma_long": latest["ma_long"],
-                    "rsi": latest["rsi"],
-                },
-            }
-
-        # RSI Overbought
-        if latest["rsi"] > self.rsi_overbought:
-            return {
-                "action": "sell",
-                "confidence": (latest["rsi"] - self.rsi_overbought) / 30,
-                "reason": f"RSI Overbought ({latest['rsi']:.1f})",
-                "metadata": {"rsi": latest["rsi"]},
             }
 
         return None

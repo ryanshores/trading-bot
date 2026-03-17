@@ -112,39 +112,3 @@ class MeanReversionStrategy(StrategyInterface):
             }
 
         return None
-
-        latest = df.iloc[-1]
-
-        # Price below lower band (oversold) - BUY
-        if latest["close"] < latest["bb_lower"]:
-            return {
-                "action": "buy",
-                "confidence": min(
-                    1.0, (latest["bb_lower"] - latest["close"]) / latest["bb_std"]
-                ),
-                "reason": f"Price below lower Bollinger Band ({latest['bb_percent']:.2%})",
-                "metadata": {
-                    "bb_lower": latest["bb_lower"],
-                    "bb_middle": latest["bb_middle"],
-                    "bb_upper": latest["bb_upper"],
-                    "bb_percent": latest["bb_percent"],
-                },
-            }
-
-        # Price above upper band (overbought) - SELL
-        if latest["close"] > latest["bb_upper"]:
-            return {
-                "action": "sell",
-                "confidence": min(
-                    1.0, (latest["close"] - latest["bb_upper"]) / latest["bb_std"]
-                ),
-                "reason": f"Price above upper Bollinger Band ({latest['bb_percent']:.2%})",
-                "metadata": {
-                    "bb_lower": latest["bb_lower"],
-                    "bb_middle": latest["bb_middle"],
-                    "bb_upper": latest["bb_upper"],
-                    "bb_percent": latest["bb_percent"],
-                },
-            }
-
-        return None
